@@ -63,8 +63,9 @@
             else alert("Ошибка при изменении участия");
             return;
           }
+          participantsCount.textContent = data.participants_count;
 
-          if (data.participant) {
+          if (data.is_participating) {
             participateBtn.textContent = "Отказаться от участия";
 
             const noParticipants = document.getElementById("no-participants");
@@ -83,19 +84,13 @@
               </div>
             `;
             participantsList.appendChild(a);
-
-            participantsCount.textContent = parseInt(participantsCount.textContent) + 1;
-
           } else {
             participateBtn.textContent = "Участвовать";
 
             const el = document.getElementById(`participant-${userId}`);
             if (el) el.remove();
 
-            const newCount = parseInt(participantsCount.textContent) - 1;
-            participantsCount.textContent = newCount;
-
-            if (newCount === 0) {
+            if (data.participants_count === 0) {
               const p = document.createElement("p");
               p.id = "no-participants";
               p.textContent = "Пока нет участников";

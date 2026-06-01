@@ -8,6 +8,7 @@ from .forms import UserRegistrationForm, UserLoginForm, UserProfileEditForm
 from django.contrib.auth.forms import PasswordChangeForm
 from .models import User
 from projects.models import Project
+import os
 
 
 def register_view(request):
@@ -51,6 +52,10 @@ def edit_profile_view(request):
     if request.method == "POST":
         form = UserProfileEditForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
+            if 'avatar' in request.FILES and request.user.avatar:
+                old_avatar_path = request.user.avatar.path
+                if os.path.exists(old_avatar_path):
+                    os.remove(old_avatar_path)
             form.save()
             return redirect("users:detail", user_id=request.user.id)
     else:

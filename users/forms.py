@@ -6,7 +6,6 @@ import re
 from .models import User
 from django.contrib.auth import authenticate
 
-
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Пароль")
 
@@ -21,16 +20,26 @@ class UserRegistrationForm(forms.ModelForm):
 
 
 class UserLoginForm(AuthenticationForm):
-    username = forms.EmailField(label="Email")
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'placeholder': 'Email'}))
+    password = forms.CharField(label="Пароль", widget=forms.PasswordInput(attrs={'placeholder': 'Пароль'}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["username"].label = "Электронная почта"
+        self.fields["email"].label = "Электронная почта"
         self.fields["password"].label = "Пароль"
         self.error_messages = {
             "invalid_login": "Неверный email или пароль",
         }
 
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get("email")
+        password = cleaned_data.get("password")
+        if email and password:
+            self.user_cache = authenticate(username=email, password=password)
+            if self.user_cache is None:
+                raise ValidationError(self.error_messages["invalid_login"])
+        return cleaned_data
 
 class UserProfileEditForm(forms.ModelForm):
     class Meta:

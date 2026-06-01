@@ -32,14 +32,15 @@ class UserLoginForm(AuthenticationForm):
         }
 
     def clean(self):
-        cleaned_data = super().clean()
-        email = cleaned_data.get("email")
-        password = cleaned_data.get("password")
-        if email and password:
-            self.user_cache = authenticate(username=email, password=password)
+        username = self.cleaned_data.get("username")
+        password = self.cleaned_data.get("password")
+        if username and password:
+            self.user_cache = authenticate(self.request, username=username, password=password)
             if self.user_cache is None:
                 raise ValidationError(self.error_messages["invalid_login"])
-        return cleaned_data
+            else:
+                self.confirm_login_allowed(self.user_cache)
+        return self.cleaned_data
 
 class UserProfileEditForm(forms.ModelForm):
     class Meta:

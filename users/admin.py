@@ -10,13 +10,46 @@ class UserAdmin(BaseUserAdmin):
     ordering = ("email",)
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("name", "surname", "avatar", "phone", "github_url", "about")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        (
+            "Personal info",
+            {
+                "fields": (
+                    "name",
+                    "surname",
+                    "avatar",
+                    "phone",
+                    "github_url",
+                    "about",
+                )
+            },
+        ),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
         ("Favorites", {"fields": ("favorites",)}),
     )
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": ("email", "name", "surname", "phone", "password1", "password2"),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "email",
+                    "name",
+                    "surname",
+                    "phone",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
     )

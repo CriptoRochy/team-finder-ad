@@ -12,12 +12,18 @@ def project_list_view(request):
     paginator = Paginator(projects_list, 12)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    return render(request, "projects/project_list.html", {"page_obj": page_obj, "query_prefix": ""})
+    return render(
+        request,
+        "projects/project_list.html",
+        {"page_obj": page_obj, "query_prefix": ""},
+    )
 
 
 def project_detail_view(request, project_id):
     project = get_object_or_404(Project, id=project_id)
-    return render(request, "projects/project-details.html", {"project": project})
+    return render(
+        request, "projects/project-details.html", {"project": project}
+    )
 
 
 @login_required
@@ -32,7 +38,11 @@ def create_project_view(request):
             return redirect("projects:detail", project_id=project.id)
     else:
         form = ProjectForm()
-    return render(request, "projects/create-project.html", {"form": form, "is_edit": False})
+    return render(
+        request,
+        "projects/create-project.html",
+        {"form": form, "is_edit": False},
+    )
 
 
 @login_required
@@ -47,7 +57,11 @@ def edit_project_view(request, project_id):
             return redirect("projects:detail", project_id=project.id)
     else:
         form = ProjectForm(instance=project)
-    return render(request, "projects/create-project.html", {"form": form, "is_edit": True})
+    return render(
+        request,
+        "projects/create-project.html",
+        {"form": form, "is_edit": True},
+    )
 
 
 @login_required
@@ -73,11 +87,13 @@ def toggle_participate_view(request, project_id):
     else:
         project.participants.add(request.user)
         is_participating = True
-    return JsonResponse({
-        "status": "ok",
-        "is_participating": is_participating,
-        "participants_count": project.participants.count()
-    })
+    return JsonResponse(
+        {
+            "status": "ok",
+            "is_participating": is_participating,
+            "participants_count": project.participants.count(),
+        }
+    )
 
 
 @login_required
@@ -94,4 +110,6 @@ def complete_project_view(request, project_id):
 @login_required
 def favorites_list_view(request):
     projects = request.user.favorites.all().order_by("-created_at")
-    return render(request, "projects/favorite_projects.html", {"projects": projects})
+    return render(
+        request, "projects/favorite_projects.html", {"projects": projects}
+    )

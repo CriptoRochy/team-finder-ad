@@ -1,10 +1,10 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 import re
 from .models import User
-from django.contrib.auth import authenticate
+
 
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Пароль")
@@ -20,27 +20,17 @@ class UserRegistrationForm(forms.ModelForm):
 
 
 class UserLoginForm(AuthenticationForm):
-    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'placeholder': 'Email'}))
-    password = forms.CharField(label="Пароль", widget=forms.PasswordInput(attrs={'placeholder': 'Пароль'}))
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["email"].label = "Электронная почта"
+        self.fields["username"].label = "Электронная почта"
+        self.fields["username"].widget = forms.EmailInput(
+            attrs={"placeholder": "Email"}
+        )
         self.fields["password"].label = "Пароль"
-        self.error_messages = {
-            "invalid_login": "Неверный email или пароль",
-        }
+        self.fields["password"].widget = forms.PasswordInput(
+            attrs={"placeholder": "Пароль"}
+        )
 
-    def clean(self):
-        username = self.cleaned_data.get("username")
-        password = self.cleaned_data.get("password")
-        if username and password:
-            self.user_cache = authenticate(self.request, username=username, password=password)
-            if self.user_cache is None:
-                raise ValidationError(self.error_messages["invalid_login"])
-            else:
-                self.confirm_login_allowed(self.user_cache)
-        return self.cleaned_data
 
 class UserProfileEditForm(forms.ModelForm):
     class Meta:
@@ -55,7 +45,7 @@ class UserProfileEditForm(forms.ModelForm):
             "github_url": "GitHub",
         }
         widgets = {
-            'avatar': forms.FileInput(attrs={'class': 'avatar-input'}),
+            "avatar": forms.FileInput(attrs={"class": "avatar-input"}),
         }
 
     def clean_github_url(self):
@@ -69,3 +59,29 @@ class UserProfileEditForm(forms.ModelForm):
             if "github.com" not in url:
                 raise ValidationError("Ссылка должна вести на GitHub")
         return url
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone")
+        if phone:
+            phone = re.sub(r"[^\d+]", "", phone)
+            if phone.startswith("8") and len(phone) == 11:
+                phone = "+7" + phone[1:]
+            elif phone.startswith("7") and len(phone) == 11:
+                phone = "+" + phone
+            elif phone.startswith("+7") and len(phone) == 12:
+                pass
+            else:
+                raise ValidationError(
+                    "Номер телефона должен быть в формате"
+                    "8XXXXXXXXXX или +7XXXXXXXXXX"
+                )
+            if (
+                User.objects.exclude(pk=self.instance.pk)
+                .filter(phone=phone)
+                .exists()
+            ):
+                raise ValidationError(
+                    "Пользователь с таким номером" " телефона уже существует"
+                )
+            return phone
+        return phone

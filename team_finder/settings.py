@@ -41,7 +41,9 @@ ROOT_URLCONF = "team_finder.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / f"templates_var{config('TASK_VERSION', default='1')}"],
+        "DIRS": [
+            BASE_DIR / f"templates_var{config('TASK_VERSION', default='1')}"
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -76,25 +78,18 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = []
 if not DEBUG:
-    AUTH_PASSWORD_VALIDATORS.extend(
-        [
-            {
-                "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-            },
-            {
-                "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-            },
-            {
-                "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-            },
-            {
-                "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-            },
-        ]
-    )
+    AUTH_PASSWORD_VALIDATORS = [
+        {"NAME":
+         "django.contrib.auth"
+         ".password_validation.UserAttributeSimilarityValidator"},
+        {"NAME":
+         "django.contrib.auth.password_validation.MinimumLengthValidator"},
+        {"NAME":
+         "django.contrib.auth.password_validation.CommonPasswordValidator"},
+        {"NAME":
+         "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "ru-ru"
 
@@ -121,10 +116,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")

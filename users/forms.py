@@ -1,9 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
-from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
-import re
+from django.core.validators import URLValidator
+
 from .models import User
+from .utils import validate_phone
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -62,26 +63,4 @@ class UserProfileEditForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get("phone")
-        if phone:
-            phone = re.sub(r"[^\d+]", "", phone)
-            if phone.startswith("8") and len(phone) == 11:
-                phone = "+7" + phone[1:]
-            elif phone.startswith("7") and len(phone) == 11:
-                phone = "+" + phone
-            elif phone.startswith("+7") and len(phone) == 12:
-                pass
-            else:
-                raise ValidationError(
-                    "Номер телефона должен быть в формате"
-                    "8XXXXXXXXXX или +7XXXXXXXXXX"
-                )
-            if (
-                User.objects.exclude(pk=self.instance.pk)
-                .filter(phone=phone)
-                .exists()
-            ):
-                raise ValidationError(
-                    "Пользователь с таким номером" " телефона уже существует"
-                )
-            return phone
-        return phone
+        return validate_phone(phone, self.instance)

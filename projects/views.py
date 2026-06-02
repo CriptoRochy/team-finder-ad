@@ -3,15 +3,26 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
+from http import HTTPStatus
+
 from .models import Project
 from .forms import ProjectForm
 
 
+def paginate_queryset(request, queryset, per_page=12):
+    paginator = Paginator(queryset, per_page)
+    page_number = request.GET.get('page')
+    return paginator.get_page(page_number)
+
+
 def project_list_view(request):
-    projects_list = Project.objects.all().order_by("-created_at")
-    paginator = Paginator(projects_list, 12)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    projects_list = (
+        Project.objects
+        .select_related('owner')
+        .all()
+        .order_by("-created_at")
+    )
+    page_obj = paginate_queryset(request, projects_list)
     return render(
         request,
         "projects/project_list.html",
@@ -20,9 +31,14 @@ def project_list_view(request):
 
 
 def project_detail_view(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(
+        Project.objects.select_related('owner'),
+        id=project_id
+    )
     return render(
-        request, "projects/project-details.html", {"project": project}
+        request,
+        "projects/project-details.html",
+        {"project": project},
     )
 
 
@@ -67,49 +83,81 @@ def edit_project_view(request, project_id):
 @login_required
 @require_POST
 def toggle_favorite_view(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if project in request.user.favorites.all():
+    project = Project.objects.filter(id=project_id).first()
+    if not project:
+        return JsonResponse(
+            {"status": "error", "message": "Project not found"},
+            status=HTTPStatus.NOT_FOUND
+        )
+
+    is_favorited = request.user.favorites.filter(id=project_id).exists()
+    if is_favorited:
         request.user.favorites.remove(project)
         favorited = False
     else:
         request.user.favorites.add(project)
         favorited = True
+
     return JsonResponse({"status": "ok", "favorited": favorited})
 
 
 @login_required
 @require_POST
 def toggle_participate_view(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if request.user in project.participants.all():
+    project = Project.objects.filter(id=project_id).first()
+    if not project:
+        return JsonResponse(
+            {"status": "error", "message": "Project not found"},
+            status=HTTPStatus.NOT_FOUND
+        )
+
+    is_participating = project.participants.filter(id=request.user.id).exists()
+    if is_participating:
         project.participants.remove(request.user)
-        is_participating = False
     else:
         project.participants.add(request.user)
-        is_participating = True
-    return JsonResponse(
-        {
-            "status": "ok",
-            "is_participating": is_participating,
-            "participants_count": project.participants.count(),
-        }
-    )
+
+    return JsonResponse({
+        "status": "ok",
+        "is_participating": not is_participating,
+        "participants_count": project.participants.count()
+    })
 
 
 @login_required
 @require_POST
 def complete_project_view(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
-    if project.owner == request.user and project.status == "open":
-        project.status = "closed"
-        project.save()
-        return JsonResponse({"status": "ok", "project_status": "closed"})
-    return JsonResponse({"status": "error"}, status=403)
+    project = Project.objects.filter(id=project_id).first()
+    if not project:
+        return JsonResponse(
+            {"status": "error", "message": "Project not found"},
+            status=HTTPStatus.NOT_FOUND
+        )
+
+    if (project.owner != request.user
+            or project.status != Project.STATUS_OPEN):
+        return JsonResponse(
+            {"status": "error", "message": "Forbidden"},
+            status=HTTPStatus.FORBIDDEN,
+        )
+
+    project.status = Project.STATUS_CLOSED
+    project.save()
+    return JsonResponse(
+        {"status": "ok", "project_status": Project.STATUS_CLOSED}
+    )
 
 
 @login_required
 def favorites_list_view(request):
-    projects = request.user.favorites.all().order_by("-created_at")
+    projects = (
+        request.user.favorites
+        .select_related('owner')
+        .all()
+        .order_by("-created_at")
+    )
     return render(
-        request, "projects/favorite_projects.html", {"projects": projects}
+        request,
+        "projects/favorite_projects.html",
+        {"projects": projects},
     )

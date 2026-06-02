@@ -3,9 +3,11 @@ from django.conf import settings
 
 
 class Project(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_CLOSED = "closed"
     STATUS_CHOICES = [
-        ("open", "Открыт"),
-        ("closed", "Закрыт"),
+        (STATUS_OPEN, "Открыт"),
+        (STATUS_CLOSED, "Закрыт"),
     ]
 
     name = models.CharField(max_length=200, verbose_name="Название проекта")
